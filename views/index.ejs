@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles/style.css">
+    <title><%= title %></title>
+</head>
+<body>
+    <h1><%= title %></h1>
+    <nav>
+        <ul>
+            <% if(!isAuthenticated) { %>
+                <li><a href="/login/">Log IN</a></li>
+            <% } else { %>
+                <li><a href="/logout/">Log OUT</a></li>
+            <% } %>
+        </ul>
+    </nav>
+
+    <div class="lottoInfo">
+        <p>Zadnji izvučeni brojevi</p>
+        <p><%= //kolo.zadnje_kolo.izvuceni_brojevi %></p>
+    </div>
+
+    <% if(isAuthenticated) { %>
+        <div class="userInfo">
+            <p>Uplaćeni listići</p>
+            <div class="tickets">
+                <% array.forEach(ticket => { %>
+                    <div class="ticket">
+                        <p>Broj kola:</p>
+                        <p class="ticket_kolo"> <%= ticket.kolo %></p>
+                        <p>Uplaćeni brojevi:</p>
+                        <p class="ticket_numbers"><%= ticket.numbers %></p>
+                    </div>
+                <% }); %>
+            </div>
+
+            <a href="/uplata">
+                <button type="button">Uplati listić</button>
+            </a>
+        </div>
+     <% } %>
+        
+
+</body>
+</html>

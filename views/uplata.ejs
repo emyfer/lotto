@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form action="/uplata" method="POST">
+        <h1>Uplatite novi listić</h1>
+        <div class="form-group">
+            <label for="document">Broj osobne iskaznice ili putovnice:</label>
+            <input type="text" id="document" name="document" maxlength="20" required>
+        </div>
+
+        <div class="form-group">
+            <label for="numbers">Unesi 6 do 10 brojeva (od 1 do 45) odvojene zarezima:</label>
+            <input type="text" id="numbers" name="numbers" placeholder="npr. 3, 8, 15, 22, 36, 44" required>
+        </div>
+
+        <button type="submit">Uplati listić</button>
+    </form>
+</body>
+</html>
