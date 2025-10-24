@@ -1,6 +1,8 @@
 var express = require('express')
 var router = express.Router()
 const {Client} = require('pg')
+const QRCode = require('qrcode');
+
 
 //za napravit:
 
@@ -109,12 +111,13 @@ router.get("/", async (req,res) => {
 
 let uuid = null
 
-
 router.get("/uplata", (req, res) => {
-    if(req.oidc.isAuthenticated) {
+    if(req.oidc.isAuthenticated()) {
         res.render('uplata', {
+            qrUrl: null
         })
-
+    } else {
+        res.send("Nemate pristup stranici")
     }
 })
 
@@ -143,12 +146,41 @@ router.post("/uplata", async (req, res) => {
 
     const newTicket = result.rows[0];
     uuid = newTicket.id;
-    console.log("UUID novog listića:", uuid);
+    //console.log("UUID novog listića:", uuid);
+
+    const qrData = `${req.protocol}://${req.get('host')}/ticket/${uuid}`;
+    const qrCodeDataURL = await QRCode.toDataURL(qrData);
+
 
     //console.log(`Novi listić spremljen za ${nickname}:`);
     //console.log({kolo: active_kolo.broj_kola, numbers });   
-    res.redirect("/")
+    res.render('uplata', {
+            qrUrl: qrCodeDataURL
+        })
 
+});
+
+
+router.get("/ticket/:uuid", async (req, res) => {
+    const { uuid } = req.params;
+
+    try {
+        const result = await con.query("SELECT * FROM tickets WHERE id = $1;", [uuid]);
+        if (result.rows.length === 0) {
+            return res.status(404).send("Listić nije pronađen.");
+        }
+
+        const ticket = result.rows[0];
+        console.log(ticket)
+        res.render('qrPrikaz', {
+            ticket: ticket
+        })
+
+
+    } catch (err) {
+        console.error("Greška pri dohvaćanju listića:", err);
+        res.status(500).send("Greška pri dohvaćanju podataka.");
+    }
 });
 
 
