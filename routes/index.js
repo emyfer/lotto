@@ -3,8 +3,7 @@ var router = express.Router()
 const {Client} = require('pg')
 
 //za napravit:
-// postaiti u const rezultate iz baze
-//provjeriti dali postoji aktivno kolo
+
 //  ako postoji samo ispisati aktivne listice za to kolo
 //      i omoguciti unos novih
 //  ako ne postoji prikazati zadnje izvucene brojeve i 
@@ -108,24 +107,48 @@ router.get("/", async (req,res) => {
     })
 })
 
+let uuid = null
+
+
 router.get("/uplata", (req, res) => {
     if(req.oidc.isAuthenticated) {
-        res.render('uplata')
+        res.render('uplata', {
+        })
 
     }
 })
 
-router.post("/uplata", (req, res) => {
+
+router.post("/uplata", async (req, res) => {
     const { document, numbers } = req.body;
 
-    console.log("Primljen ticket:");
-    console.log(" - Broj osobne/putovnice:", document);
-    console.log(" - Brojevi:", numbers);
+    const activeRes = await con.query(`
+            SELECT broj_kola FROM kolo
+            WHERE izvuceni_brojevi IS NULL
+            ORDER BY datum_zavrsetka DESC
+            LIMIT 1;
+        `);
+    const active_kolo = activeRes.rows[0];
 
-    
+    const nickname = req.oidc.user.nickname;
 
-    // Vrati korisnika na početnu da vidi novi unos
-    res.redirect("/");
+    const created_at = new Date();
+
+    const result = await con.query(
+        `INSERT INTO tickets (broj_kola, nickname, broj_osobne, uplaceni_brojevi, datum_uplate)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING *`,
+        [active_kolo.broj_kola, nickname, document, numbers, created_at]
+    );
+
+    const newTicket = result.rows[0];
+    uuid = newTicket.id;
+    console.log("UUID novog listića:", uuid);
+
+    //console.log(`Novi listić spremljen za ${nickname}:`);
+    //console.log({kolo: active_kolo.broj_kola, numbers });   
+    res.redirect("/")
+
 });
 
 
