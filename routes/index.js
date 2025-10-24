@@ -1,36 +1,128 @@
 var express = require('express')
 var router = express.Router()
+const {Client} = require('pg')
+
+//za napravit:
+// postaiti u const rezultate iz baze
+//provjeriti dali postoji aktivno kolo
+//  ako postoji samo ispisati aktivne listice za to kolo
+//      i omoguciti unos novih
+//  ako ne postoji prikazati zadnje izvucene brojeve i 
+//      listice za to kolo
+//prikazati listice koji odgovaraju samo nickname osobi
+//spremiti nove listice u bazu
+//izgenerirati qr kod i napraviti stranicu gdje ce se oni citati
+
 const {requiresAuth} = require('express-openid-connect')
 
- const tickets = [
-        { kolo: 1, numbers: "3, 15, 22, 28, 36, 44" },
-        { kolo: 1, numbers: "5, 9, 12, 19, 33, 41" },
-        { kolo: 2, numbers: "7, 8, 17, 25, 34, 45" }
-    ];
+
+const con = new Client({
+    host: "localhost",
+    user: "postgres",
+    port: 5432,
+    password: "postgres",
+    database: "web_labosi"
+})
+con.connect().then(() => console.log("connected"))
+
+let isActive = null
+
+con.query('Select * from "tickets"', (err, res) => {
+    if(!err) {
+        //console.log(res.rows)
+        // OVO NE RADI tickets = res.rows
+    } else {
+        console.log(err.message)
+    }
+    con.end;
+})
 
 
-router.get("/", (req,res) => {
-    console.log(req.oidc.isAuthenticated())
+router.get("/", async (req,res) => {
+
+    const lastClosed = await con.query(`
+            SELECT broj_kola, izvuceni_brojevi
+            FROM kolo
+            WHERE izvuceni_brojevi IS NOT NULL
+            ORDER BY datum_zavrsetka DESC
+            LIMIT 1;
+        `);
+
+        let last_closed = lastClosed.rows[0]
+        //console.log("Last closed:")
+        //console.log(last_closed)
+
+
+    const active = await con.query(`
+            SELECT broj_kola, izvuceni_brojevi
+            FROM kolo
+            WHERE izvuceni_brojevi IS NULL
+            ORDER BY datum_zavrsetka DESC
+            LIMIT 1;
+        `);
+
+    let active_kolo = active.rows[0]
+    let tickets = [];
+    //console.log("active:")
+    //console.log(active_kolo)
+    //console.log("Active kolo broj:", active_kolo.broj_kola);
+
+    isActive = false
+
+
+    if (req.oidc.isAuthenticated() && req.oidc.user) {
+        const nickname = req.oidc.user.nickname;
+        //console.log("postoji user")
+
+        if (active_kolo) {
+                // postoji aktivno kolo
+            //console.log("postoji aktivno")
+            
+            isActive = true;
+            const tRes = await con.query(
+                `SELECT * FROM tickets WHERE nickname = $1 AND broj_kola = $2;`,
+                [nickname, active_kolo.broj_kola]
+            );
+            tickets = tRes.rows;
+            //console.log("postoje ticketi za marko22 za aktivno kolo")
+            //console.log(tickets)
+        } else if (lastClosed) {
+                // nema aktivnog kola – dohvaćamo listiće iz zadnjeg zatvorenog kola
+            const tRes = await con.query(
+                `SELECT * FROM tickets WHERE nickname = $1 AND broj_kola = $2;`,
+                [nickname, lastClosed.broj_kola]
+            );
+            tickets = tRes.rows;
+        }
+    }
+
+
+    //console.log(req.oidc.isAuthenticated())
+    //console.log(req.oidc.user)
     res.render('index', {
         title: "Lotto", 
         isAuthenticated: req.oidc.isAuthenticated(),
         user: req.oidc.user,
+        isActive: isActive,
         array: tickets
     })
 })
 
 router.get("/uplata", (req, res) => {
-    res.render('uplata')
+    if(req.oidc.isAuthenticated) {
+        res.render('uplata')
+
+    }
 })
 
-router.post("/tickets", (req, res) => {
+router.post("/uplata", (req, res) => {
     const { document, numbers } = req.body;
 
     console.log("Primljen ticket:");
     console.log(" - Broj osobne/putovnice:", document);
     console.log(" - Brojevi:", numbers);
 
-    tickets.push({kolo: 2 , numbers });
+    
 
     // Vrati korisnika na početnu da vidi novi unos
     res.redirect("/");

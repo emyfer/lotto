@@ -13,35 +13,48 @@
             <% if(!isAuthenticated) { %>
                 <li><a href="/login/">Log IN</a></li>
             <% } else { %>
+                <%= user.nickname %>
                 <li><a href="/logout/">Log OUT</a></li>
             <% } %>
         </ul>
     </nav>
 
-    <div class="lottoInfo">
-        <p>Zadnji izvučeni brojevi</p>
-        <p><%= //kolo.zadnje_kolo.izvuceni_brojevi %></p>
-    </div>
+    
+
 
     <% if(isAuthenticated) { %>
-        <div class="userInfo">
-            <p>Uplaćeni listići</p>
-            <div class="tickets">
-                <% array.forEach(ticket => { %>
-                    <div class="ticket">
-                        <p>Broj kola:</p>
-                        <p class="ticket_kolo"> <%= ticket.kolo %></p>
-                        <p>Uplaćeni brojevi:</p>
-                        <p class="ticket_numbers"><%= ticket.numbers %></p>
-                    </div>
-                <% }); %>
-            </div>
 
-            <a href="/uplata">
-                <button type="button">Uplati listić</button>
-            </a>
-        </div>
-     <% } %>
+        <% if(!isActive) { %>
+            <div class="lottoInfo">
+                <p>Izvučeni brojevi u trenutnom kolu</p>
+                <p><%= //kolo.zadnje_kolo.izvuceni_brojevi %></p>
+            </div>
+        <% } else { %>  
+            <div class="lottoInfo">
+                <p>Trenutno postoji aktivno kolo i uplate su omogućene!</p>
+            </div>    
+        <% } %>
+         
+        
+        <% if(isActive) { %>
+            <div class="userInfo">
+                <p>Uplaćeni listići</p>
+                <div class="tickets">
+                    <% array.forEach(ticket => { %>
+                        <div class="ticket">
+                            <p>Uplaćeni brojevi:</p>
+                            <p class="ticket_numbers"><%= ticket.uplaceni_brojevi %></p>
+                        </div>
+                    <% }); %>
+                </div>
+
+                <a href="/uplata">
+                    <button type="button">Uplati listić</button>
+                </a>
+            </div>
+        <% } %>
+
+    <% } %>
         
 
 </body>
