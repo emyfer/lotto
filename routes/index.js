@@ -3,19 +3,7 @@ var router = express.Router()
 const {Client} = require('pg')
 const QRCode = require('qrcode');
 
-
-//za napravit:
-
-//  ako postoji samo ispisati aktivne listice za to kolo
-//      i omoguciti unos novih
-//  ako ne postoji prikazati zadnje izvucene brojeve i 
-//      listice za to kolo
-//prikazati listice koji odgovaraju samo nickname osobi
-//spremiti nove listice u bazu
-//izgenerirati qr kod i napraviti stranicu gdje ce se oni citati
-
 const {requiresAuth} = require('express-openid-connect')
-
 
 const con = new Client({
     host: "localhost",
@@ -27,17 +15,6 @@ const con = new Client({
 con.connect().then(() => console.log("connected"))
 
 let isActive = null
-
-con.query('Select * from "tickets"', (err, res) => {
-    if(!err) {
-        //console.log(res.rows)
-        // OVO NE RADI tickets = res.rows
-    } else {
-        console.log(err.message)
-    }
-    con.end;
-})
-
 
 router.get("/", async (req,res) => {
 
@@ -64,20 +41,13 @@ router.get("/", async (req,res) => {
 
     let active_kolo = active.rows[0]
     let tickets = [];
-    //console.log("active:")
-    //console.log(active_kolo)
-    //console.log("Active kolo broj:", active_kolo.broj_kola);
 
     isActive = false
 
-
     if (req.oidc.isAuthenticated() && req.oidc.user) {
         const nickname = req.oidc.user.nickname;
-        //console.log("postoji user")
 
         if (active_kolo) {
-                // postoji aktivno kolo
-            //console.log("postoji aktivno")
             
             isActive = true;
             const tRes = await con.query(
@@ -85,10 +55,8 @@ router.get("/", async (req,res) => {
                 [nickname, active_kolo.broj_kola]
             );
             tickets = tRes.rows;
-            //console.log("postoje ticketi za marko22 za aktivno kolo")
-            //console.log(tickets)
+
         } else if (lastClosed) {
-                // nema aktivnog kola – dohvaćamo listiće iz zadnjeg zatvorenog kola
             const tRes = await con.query(
                 `SELECT * FROM tickets WHERE nickname = $1 AND broj_kola = $2;`,
                 [nickname, lastClosed.broj_kola]
@@ -97,11 +65,8 @@ router.get("/", async (req,res) => {
         }
     }
 
-
-    //console.log(req.oidc.isAuthenticated())
-    //console.log(req.oidc.user)
     res.render('index', {
-        title: "Lotto", 
+        title: "Lotto 6/45", 
         isAuthenticated: req.oidc.isAuthenticated(),
         user: req.oidc.user,
         isActive: isActive,
@@ -120,7 +85,6 @@ router.get("/uplata", (req, res) => {
         res.send("Nemate pristup stranici")
     }
 })
-
 
 router.post("/uplata", async (req, res) => {
     const { document, numbers } = req.body;
@@ -146,20 +110,15 @@ router.post("/uplata", async (req, res) => {
 
     const newTicket = result.rows[0];
     uuid = newTicket.id;
-    //console.log("UUID novog listića:", uuid);
 
     const qrData = `${req.protocol}://${req.get('host')}/ticket/${uuid}`;
     const qrCodeDataURL = await QRCode.toDataURL(qrData);
 
-
-    //console.log(`Novi listić spremljen za ${nickname}:`);
-    //console.log({kolo: active_kolo.broj_kola, numbers });   
     res.render('uplata', {
             qrUrl: qrCodeDataURL
         })
 
 });
-
 
 router.get("/ticket/:uuid", async (req, res) => {
     const { uuid } = req.params;
