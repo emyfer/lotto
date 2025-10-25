@@ -22,6 +22,16 @@
             <input type="text" id="numbers" name="numbers" placeholder="npr. 3, 8, 15, 22, 36, 44" required>
         </div>
 
+        <% if (typeof errors !== "undefined" && errors.length > 0) { %>
+            <div class="error-box">
+                <ul>
+                    <% errors.forEach(err => { %>
+                        <li><%= err %></li>
+                    <% }) %>
+                </ul>
+            </div>
+        <% } %>
+
         <button type="submit">Uplati listić</button>
     </form>
 

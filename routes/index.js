@@ -89,6 +89,47 @@ router.get("/uplata", (req, res) => {
 router.post("/uplata", async (req, res) => {
     const { document, numbers } = req.body;
 
+    let errors = [];
+
+    // Provjera osobne
+    if (!document || document.trim().length === 0) {
+        errors.push("Broj osobne iskaznice ili putovnice ne smije biti prazan.");
+    } else if (document.length > 20) {
+        errors.push("Broj osobne iskaznice ili putovnice ne smije biti duži od 20 znakova.");
+    }
+
+    // Pretvori string u niz brojeva
+    const numberArray = numbers
+        .split(",")
+        .map(n => parseInt(n.trim()))
+        .filter(n => !isNaN(n));
+
+    // Provjera količine brojeva
+    if (numberArray.length < 6 || numberArray.length > 10) {
+        errors.push("Moraš unijeti između 6 i 10 brojeva.");
+    }
+
+    // Provjera raspona (1–45)
+    if (numberArray.some(n => n < 1 || n > 45)) {
+        errors.push("Svi brojevi moraju biti između 1 i 45.");
+    }
+
+    // Provjera duplikata
+    const unique = new Set(numberArray);
+    if (unique.size !== numberArray.length) {
+        errors.push("Ne smije biti duplikata među brojevima.");
+    }
+
+    // Ako postoji greška, ponovno prikaži formu s porukom
+    if (errors.length > 0) {
+        return res.render("uplata", {
+            qrUrl: null,
+            errors,
+            document,
+            numbers
+        });
+    }
+
     const activeRes = await con.query(`
             SELECT broj_kola FROM kolo
             WHERE izvuceni_brojevi IS NULL
@@ -130,9 +171,13 @@ router.get("/ticket/:uuid", async (req, res) => {
         }
 
         const ticket = result.rows[0];
-        console.log(ticket)
+
+        const koloResult = await con.query("SELECT * FROM kolo WHERE broj_kola = $1;", [ticket.broj_kola]);
+        const kolo = koloResult.rows.length > 0 ? koloResult.rows[0] : null;
+
         res.render('qrPrikaz', {
-            ticket: ticket
+            ticket: ticket,
+            kolo: kolo
         })
 
 

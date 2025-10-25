@@ -13,6 +13,18 @@
     <p><b>Uplaćeni brojevi:</b> <%= ticket.uplaceni_brojevi %></p>
     <p><b>Datum uplate:</b> <%= ticket.datum_uplate %></p>
 
+    <% if (kolo) { %>
+    <% if (kolo.aktivno) { %>
+      <p><b>Status:</b> Kolo još traje.</p>
+    <% } else { %>
+      <p><b>Status:</b> Završeno</p>
+      <p><b>Izvučeni brojevi:</b> <%= kolo.izvuceni_brojevi %></p>
+    <% } %>
+    <% } else { %>
+      <p><b>Status:</b> Nepoznato kolo.</p>
+    <% } %>
+
+
     <a href="/">
       <button>Natrag na početnu</button> 
     </a>
