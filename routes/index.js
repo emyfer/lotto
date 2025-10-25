@@ -27,6 +27,8 @@ router.get("/", async (req,res) => {
         `);
 
         let last_closed = lastClosed.rows[0]
+        console.log("closed svi:")
+        console.log(lastClosed.rows)
 
 
 
@@ -114,7 +116,6 @@ router.post("/uplata", async (req, res) => {
         .map(n => parseInt(n.trim()))
         .filter(n => !isNaN(n));
 
-    // Provjera količine brojeva
     if (numberArray.length < 6 || numberArray.length > 10) {
         errors.push("Moraš unijeti između 6 i 10 brojeva.");
     }
@@ -187,11 +188,91 @@ router.get("/ticket/:uuid", async (req, res) => {
             kolo: kolo
         })
 
-
     } catch (err) {
         console.error("Greška pri dohvaćanju listića:", err);
         res.status(500).send("Greška pri dohvaćanju podataka.");
     }
+});
+
+
+router.post("/new-round", async (req, res) => {
+  try {
+    const activeRound = await con.query("SELECT * FROM kolo WHERE izvuceni_brojevi IS NULL");
+
+    if (activeRound.rows.length > 0) {
+      return res.status(204).send();
+    }
+
+    const lastRound = await con.query("SELECT broj_kola FROM kolo ORDER BY broj_kola DESC LIMIT 1");
+    const nextBrojKola = lastRound.rows.length > 0 ? lastRound.rows[0].broj_kola + 1 : 1;
+
+    await con.query(
+      "INSERT INTO kolo (broj_kola, aktivno, datum_pocetka) VALUES ($1, true, NOW())",
+      [nextBrojKola]
+    );
+
+    return res.status(204).send();
+  } catch (err) {
+    console.error("Greška u /new-round:", err);
+    return res.status(500).send("Internal Server Error");
+  }
+});
+
+
+router.post("/close", async (req, res) => {
+  try {
+    const activeRound = await con.query(`SELECT * FROM kolo WHERE izvuceni_brojevi IS NULL`);
+    console.log(activeRound.rows)
+
+    console.log("akticna:")
+    console.log(activeRound.rows[0])
+
+    if (activeRound.rows.length === 0) {
+      return res.status(204).send();
+    }
+
+    await con.query(
+      `UPDATE kolo SET aktivno = false, datum_zavrsetka = NOW() WHERE izvuceni_brojevi IS NULL`
+    );
+
+    return res.status(204).send();
+  } catch (err) {
+    console.error("Greška u /close:", err);
+    return res.status(500).send("Internal Server Error");
+  }
+});
+
+
+router.post("/store-results", async (req, res) => {
+  try {
+    const { numbers } = req.body;
+
+    if (!Array.isArray(numbers)) {
+      return res.status(400).send("Numbers moraju biti polje (array).");
+    }
+
+    const lastRound = await con.query("SELECT * FROM kolo ORDER BY broj_kola DESC LIMIT 1");
+
+    if (lastRound.rows.length === 0) {
+      return res.status(400).send("Nema evidentiranih kola.");
+    }
+
+    const round = lastRound.rows[0];
+
+    if (round.aktivno === true || round.izvuceni_brojevi !== null) {
+      return res.status(400).send("Kolo je još aktivno ili brojevi već postoje.");
+    }
+
+    await con.query(
+      "UPDATE kolo SET izvuceni_brojevi = $1 WHERE broj_kola = $2",
+      [numbers, round.broj_kola]
+    );
+
+    return res.status(204).send();
+  } catch (err) {
+    console.error("Greška u /store-results:", err);
+    return res.status(500).send("Internal Server Error");
+  }
 });
 
 
