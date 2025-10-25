@@ -21,39 +21,51 @@
         </ul>
     </nav>
 
-    <% if(isAuthenticated) { %>
+    <% if (isAuthenticated) { %>
 
-        <% if(!isActive) { %>
-            <div class="lottoInfo">
-                <p>Izvučeni brojevi u trenutnom kolu</p>
-                <p><%= //kolo.zadnje_kolo.izvuceni_brojevi %></p>
-            </div>
-        <% } else { %>  
-            <div class="lottoInfo">
-                <p>Trenutno postoji aktivno kolo i uplate su omogućene!</p>
-            </div>    
+  <% if (!isActive && kolo) { %>
+    <div class="lottoInfo">
+      <p>Posljednje završeno kolo: <b><%= kolo.broj_kola %></b></p>
+      <p>Izvučeni brojevi:</p>
+      <p class="drawn_numbers"><%= kolo.izvuceni_brojevi %></p>
+    </div>
+  <% } else if (isActive) { %>
+    <div class="lottoInfo">
+      <p>Trenutno postoji aktivno kolo i uplate su omogućene!</p>
+    </div>    
+  <% } %>
+
+  <% if (array.length > 0) { %>
+    <div class="userInfo">
+      <p>
+        <% if (isActive) { %>
+          Vaši uplaćeni listići za aktivno kolo:
+        <% } else { %>
+          Vaši listići za posljednje završeno kolo:
         <% } %>
-         
-        
-        <% if(isActive) { %>
-            <div class="userInfo">
-                <p>Uplaćeni listići za aktivno kolo:</p>
-                <div class="tickets">
-                    <% array.forEach(ticket => { %>
-                        <div class="ticket">
-                            <p>Uplaćeni brojevi:</p>
-                            <p class="ticket_numbers"><%= ticket.uplaceni_brojevi %></p>
-                        </div>
-                    <% }); %>
-                </div>
+      </p>
 
-                <a href="/uplata">
-                    <button type="button">Uplati listić</button>
-                </a>
-            </div>
-        <% } %>
+      <div class="tickets">
+        <% array.forEach(ticket => { %>
+          <div class="ticket">
+            <p>Uplaćeni brojevi:</p>
+            <p class="ticket_numbers"><%= ticket.uplaceni_brojevi %></p>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  <% } else if (isAuthenticated && isActive) { %>
+    <p>Još niste uplatili nijedan listić za ovo kolo.</p>
+  <% } %>
 
-    <% } %>
+  <% if (isActive) { %>
+    <a href="/uplata">
+      <button type="button">Uplati listić</button>
+    </a>
+  <% } %>
+
+<% } %>
+
         
 
 </body>

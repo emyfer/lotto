@@ -27,8 +27,7 @@ router.get("/", async (req,res) => {
         `);
 
         let last_closed = lastClosed.rows[0]
-        //console.log("Last closed:")
-        //console.log(last_closed)
+
 
 
     const active = await con.query(`
@@ -39,8 +38,13 @@ router.get("/", async (req,res) => {
             LIMIT 1;
         `);
 
-    let active_kolo = active.rows[0]
+        let active_kolo = active.rows[0]
+        //console.log("aktivno")
+        //console.log(active_kolo)
+
+   
     let tickets = [];
+    let displayed_kolo = null;
 
     isActive = false
 
@@ -54,14 +58,21 @@ router.get("/", async (req,res) => {
                 `SELECT * FROM tickets WHERE nickname = $1 AND broj_kola = $2;`,
                 [nickname, active_kolo.broj_kola]
             );
-            tickets = tRes.rows;
+            tickets = tRes.rows
+            displayed_kolo = active;
+
 
         } else if (lastClosed) {
+            //console.log("trazim tickete u closed")
             const tRes = await con.query(
                 `SELECT * FROM tickets WHERE nickname = $1 AND broj_kola = $2;`,
-                [nickname, lastClosed.broj_kola]
+                [nickname, last_closed.broj_kola]
             );
+
             tickets = tRes.rows;
+            //console.log("Closed ticketsi")
+            //console.log(tickets)
+            displayed_kolo = last_closed
         }
     }
 
@@ -70,7 +81,8 @@ router.get("/", async (req,res) => {
         isAuthenticated: req.oidc.isAuthenticated(),
         user: req.oidc.user,
         isActive: isActive,
-        array: tickets
+        array: tickets,
+        kolo: displayed_kolo
     })
 })
 
@@ -91,14 +103,12 @@ router.post("/uplata", async (req, res) => {
 
     let errors = [];
 
-    // Provjera osobne
     if (!document || document.trim().length === 0) {
         errors.push("Broj osobne iskaznice ili putovnice ne smije biti prazan.");
     } else if (document.length > 20) {
         errors.push("Broj osobne iskaznice ili putovnice ne smije biti duži od 20 znakova.");
     }
 
-    // Pretvori string u niz brojeva
     const numberArray = numbers
         .split(",")
         .map(n => parseInt(n.trim()))
@@ -109,18 +119,15 @@ router.post("/uplata", async (req, res) => {
         errors.push("Moraš unijeti između 6 i 10 brojeva.");
     }
 
-    // Provjera raspona (1–45)
     if (numberArray.some(n => n < 1 || n > 45)) {
         errors.push("Svi brojevi moraju biti između 1 i 45.");
     }
 
-    // Provjera duplikata
     const unique = new Set(numberArray);
     if (unique.size !== numberArray.length) {
         errors.push("Ne smije biti duplikata među brojevima.");
     }
 
-    // Ako postoji greška, ponovno prikaži formu s porukom
     if (errors.length > 0) {
         return res.render("uplata", {
             qrUrl: null,
