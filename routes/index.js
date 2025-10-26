@@ -110,7 +110,8 @@ router.post("/uplata", async (req, res) => {
         errors.push("Broj osobne iskaznice ili putovnice ne smije biti prazan.");
     } else if (document.length > 20) {
         errors.push("Broj osobne iskaznice ili putovnice ne smije biti duži od 20 znakova.");
-    }
+    } 
+
 
     const numberArray = numbers
         .split(",")
@@ -224,10 +225,10 @@ router.post("/close", async (req, res) => {
   try {
     console.log()
     const activeRound = await con.query(`SELECT * FROM kolo WHERE izvuceni_brojevi IS NULL`);
-    console.log(activeRound.rows)
+    //console.log(activeRound.rows)
 
-    console.log("akticna:")
-    console.log(activeRound.rows[0])
+    //console.log("akticna:")
+    //console.log(activeRound.rows[0])
 
     if (activeRound.rows.length === 0) {
       return res.status(204).send();
