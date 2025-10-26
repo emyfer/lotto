@@ -242,14 +242,15 @@ router.post("/close", async (req, res) => {
   }
 });
 
-
 router.post("/store-results", async (req, res) => {
   try {
-    const { numbers } = req.body;
-
-    if (!Array.isArray(numbers)) {
-      return res.status(400).send("Numbers moraju biti polje (array).");
+    const numbers = [];
+    while (numbers.length < 6) {
+      const randomNum = Math.floor(Math.random() * 45) + 1;
+      if (!numbers.includes(randomNum)) numbers.push(randomNum);
     }
+
+    numbers.sort((a, b) => a - b);
 
     const lastRound = await con.query("SELECT * FROM kolo ORDER BY broj_kola DESC LIMIT 1");
 
@@ -268,12 +269,15 @@ router.post("/store-results", async (req, res) => {
       [numbers, round.broj_kola]
     );
 
-    return res.status(204).send();
+    console.log("Izvučeni brojevi za kolo", round.broj_kola, "su:", numbers);
+
+    return res.status(200).json({ message: "Rezultati spremljeni.", brojevi: numbers });
   } catch (err) {
     console.error("Greška u /store-results:", err);
     return res.status(500).send("Internal Server Error");
   }
 });
+
 
 
 module.exports = router
