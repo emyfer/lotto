@@ -27,8 +27,8 @@ router.get("/", async (req,res) => {
         `);
 
         let last_closed = lastClosed.rows[0]
-        console.log("closed svi:")
-        console.log(lastClosed.rows)
+        //console.log("closed zadnji:")
+        //console.log(lastClosed.rows)
 
 
 
