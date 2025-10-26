@@ -6,11 +6,12 @@ const QRCode = require('qrcode');
 const {requiresAuth} = require('express-openid-connect')
 
 const con = new Client({
-    host: "localhost",
-    user: "postgres",
+    host: process.env.HOST,
+    user: process.env.uSER,
     port: 5432,
-    password: "postgres",
-    database: "web_labosi"
+    password: process.env.PASSWORD,
+    database: process.env.DATABASE,
+    ssl: true
 })
 con.connect().then(() => console.log("connected"))
 
@@ -221,6 +222,7 @@ router.post("/new-round", async (req, res) => {
 
 router.post("/close", async (req, res) => {
   try {
+    console.log()
     const activeRound = await con.query(`SELECT * FROM kolo WHERE izvuceni_brojevi IS NULL`);
     console.log(activeRound.rows)
 

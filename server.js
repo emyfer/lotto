@@ -32,8 +32,11 @@ var indexRouter = require("./routes/index.js")
 app.use("/", indexRouter)
 
 
+const externalUrl = process.env.RENDER_EXTERNAL_URL;
+const port = 3000;
+const hostname = externalUrl ? '0.0.0.0' : 'localhost';
 
-app.listen(3000, () => {
-    console.log(`Example app listening on port 3000`)
-})
-
+app.listen(port, hostname, () => {
+  console.log(`Server running at http://${hostname}:${port}/`);
+  if (externalUrl) console.log(`Externally accessible at ${externalUrl}`);
+});
